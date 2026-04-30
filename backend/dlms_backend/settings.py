@@ -7,6 +7,10 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-me-in-production")
@@ -33,7 +37,6 @@ INSTALLED_APPS = [
     "monitoring",
     "alerts",
     "audit_logs",
-    "api",
 ]
 
 MIDDLEWARE = [
@@ -70,6 +73,23 @@ DATABASES = {
 
 # ── Custom User ───────────────────────────────────────────────────
 AUTH_USER_MODEL = "accounts.CustomUser"
+
+# ── Templates ──────────────────────────────────────────────────────
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
 
 # ── DRF + JWT ─────────────────────────────────────────────────────
 REST_FRAMEWORK = {
