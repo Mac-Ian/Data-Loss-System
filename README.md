@@ -6,7 +6,336 @@
 
 ---
 
-## 📁 Repository Structure
+## � Quick Start Guide (TL;DR)
+
+If you want to get running ASAP, follow this exact sequence:
+
+```
+1. Install Prerequisites → 2. Clone Repo → 3. Backend Setup → 4. Frontend Setup → 5. Run All Services
+```
+
+**Time needed:** ~15-20 minutes for first-time setup
+
+---
+
+## 🛠️ Step 1 — Install Prerequisites
+
+Download and install these tools (in this exact order):
+
+| Tool | Version | Windows Install | Mac/Linux Install |
+|------|---------|-----------------|-------------------|
+| **Git** | 2.40+ | [git-scm.com](https://git-scm.com/download/win) | `brew install git` |
+| **Python** | 3.11+ | [python.org](https://www.python.org/downloads/) | `brew install python@3.11` |
+| **Node.js** | 20 LTS | [nodejs.org](https://nodejs.org/) | `brew install node@20` |
+| **MySQL** | 8.0 | [MySQL Installer](https://dev.mysql.com/downloads/installer/) | `brew install mysql@8.0` |
+| **Redis** | 7.x | [Memurai](https://www.memurai.com/) (Windows) | `brew install redis` |
+
+### ⚠️ Important Installation Notes:
+
+- **Python:** During installation, check ✅ "Add Python to PATH"
+- **MySQL:** When installing, set root password to `RootPass123!` (or remember yours)
+- **Redis (Windows):** Use **Memurai** instead of native Redis — it works identically
+- **Node.js:** Use the LTS version (20.x), not the latest
+
+---
+
+## 📂 Step 2 — Clone the Repository
+
+```bash
+# Open VS Code Terminal (Ctrl + `)
+git clone https://github.com/Mac-Ian/Data-Loss-System.git
+cd Data-Loss-System
+```
+
+---
+
+## ⚙️ Step 3 — Backend Setup (Django)
+
+### 3.1 Create Virtual Environment
+
+```bash
+# Inside Data-Loss-System folder
+cd backend
+python -m venv .venv
+```
+
+### 3.2 Activate Virtual Environment
+
+```powershell
+# Windows PowerShell (run this exact command):
+.venv\Scripts\Activate.ps1
+
+# If you get an error, run this first:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+# Then run the activate command again
+```
+
+```bash
+# Mac/Linux:
+source .venv/bin/activate
+```
+
+### 3.3 Install Python Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3.4 Configure Environment Variables
+
+```bash
+# Create .env file from template
+copy .env.example .env
+
+# OR manually create backend/.env with this content:
+```
+
+Create a file named `.env` in the `backend/` folder with:
+
+```env
+DJANGO_SECRET_KEY=dlms-riba-secret-key-change-in-production-2024
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+DB_NAME=dlms_db
+DB_USER=root
+DB_PASSWORD=RootPass123!
+DB_HOST=127.0.0.1
+DB_PORT=3306
+
+REDIS_URL=redis://127.0.0.1:6379/0
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+```
+
+> **Note:** Change `DB_PASSWORD` to match your MySQL root password
+
+### 3.5 Start MySQL and Create Database
+
+```bash
+# Windows - Start MySQL Service
+# Open Services app → Find MySQL80 → Right-click → Start
+
+# OR in terminal (admin):
+net start mysql80
+```
+
+```sql
+-- Open MySQL Workbench or mysql CLI and run:
+CREATE DATABASE dlms_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 3.6 Run Database Migrations
+
+```bash
+# Make sure you're in backend/ with venv active
+python manage.py migrate
+```
+
+### 3.7 Seed Initial Data (Important!)
+
+Run these commands **in order** to populate the database:
+
+```bash
+python manage.py seed_data          # Creates roles, departments, demo users
+python manage.py seed_rules         # Creates 7 classification rules
+python manage.py seed_monitoring    # Creates 7 threat detection thresholds
+python manage.py seed_alerts        # Creates 6 automated response policies
+```
+
+✅ **Backend is ready when you see "Operations applied successfully" messages**
+
+---
+
+## 🎨 Step 4 — Frontend Setup (React)
+
+### 4.1 Navigate to Frontend
+
+```bash
+cd ..  # Go back to root
+cd frontend
+```
+
+### 4.2 Install Dependencies
+
+```bash
+npm install
+```
+
+### 4.3 Configure Environment
+
+```bash
+# Create .env file
+copy .env.example .env
+```
+
+Ensure `.env` in `frontend/` has:
+
+```env
+REACT_APP_API_URL=http://127.0.0.1:8000
+```
+
+---
+
+## 🚀 Step 5 — Run All Services
+
+You need to run **4 services simultaneously**. Open 4 separate terminal tabs in VS Code:
+
+### 📟 Terminal 1 — MySQL (if not running as service)
+
+```bash
+# Windows (if using MySQL directly):
+net start mysql80
+
+# Or if using Memurai:
+net start Memurai
+```
+
+### 📟 Terminal 2 — Redis
+
+```bash
+# Windows (Memurai):
+net start Memurai
+
+# Mac/Linux:
+redis-server
+```
+
+### 📟 Terminal 3 — Django API + Celery
+
+```bash
+# Navigate to backend
+cd backend
+
+# Activate virtual environment
+.venv\Scripts\Activate.ps1
+
+# Start Django server (keep this terminal open)
+python manage.py runserver
+```
+
+> **Keep Terminal 3 running!** You'll see "Starting development server at http://127.0.0.1:8000"
+
+### 📟 Terminal 4 — Celery Worker (Background Tasks)
+
+```bash
+# In a NEW terminal, same path:
+cd backend
+.venv\Scripts\Activate.ps1
+celery -A dlms_backend worker -l info -P gevent
+```
+
+> **Keep Terminal 4 running!** You'll see "celery@... ready"
+
+### 📟 Terminal 5 — Celery Beat (Scheduled Tasks)
+
+```bash
+# In another NEW terminal:
+cd backend
+.venv\Scripts\Activate.ps1
+celery -A dlms_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+```
+
+### 📟 Terminal 6 — React Frontend
+
+```bash
+# In a NEW terminal, go to frontend:
+cd frontend
+npm start
+```
+
+> **Keep Terminal 6 running!** Browser will open at http://localhost:3000
+
+---
+
+## ✅ Step 6 — Verify Everything is Working
+
+### Check these URLs:
+
+| Service | URL | Expected Response |
+|---------|-----|-------------------|
+| Django API | http://127.0.0.1:8000/api/ | JSON response or 404 |
+| React App | http://localhost:3000 | Login page loads |
+| API Health | http://127.0.0.1:8000/api/auth/me/ | {"detail": "Authentication credentials were not provided."} |
+
+### Login with Demo Accounts:
+
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | admin@riba.ug | Admin@2024! |
+| **Finance** | finance@riba.ug | Finance@2024! |
+| **Operations** | operations@riba.ug | Ops@2024! |
+| **Driver** | driver01@riba.ug | Driver@2024! |
+
+---
+
+## 🐳 Alternative — Run with Docker (Easier!)
+
+If you prefer not to install MySQL/Redis locally, use Docker:
+
+### Step 1 — Install Docker Desktop
+Download from [docker.com](https://www.docker.com/products/docker-desktop)
+
+### Step 2 — Run Everything with One Command
+
+```bash
+# In project root:
+docker-compose up --build
+
+# Wait for all containers to start (~3 minutes)
+# Then seed the database in a new terminal:
+docker-compose exec backend python manage.py seed_data
+docker-compose exec backend python manage.py seed_rules
+docker-compose exec backend python manage.py seed_monitoring
+docker-compose exec backend python manage.py seed_alerts
+```
+
+### Step 3 — Open the App
+
+```
+Frontend:  http://localhost:3000
+Backend:   http://127.0.0.1:8000
+```
+
+### Stop Docker:
+```bash
+docker-compose down
+```
+
+---
+
+## 🔧 Troubleshooting Common Issues
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `ModuleNotFoundError: No module named 'django'` | Virtual env not activated | Run `.venv\Scripts\Activate.ps1` |
+| `Can't connect to MySQL server` | MySQL not running | `net start mysql80` |
+| `Can't connect to Redis server` | Redis not running | `net start Memurai` |
+| `Port 8000 already in use` | Another process using port | `python manage.py runserver 8001` |
+| `npm ERR!` when installing | Node version mismatch | Use Node.js 20 LTS |
+| `CORS error` in browser | Frontend/Backend port mismatch | Check `REACT_APP_API_URL` in frontend/.env |
+| `password authentication failed` | Wrong MySQL password | Update `DB_PASSWORD` in backend/.env |
+| `celery worker not starting` | Redis not connected | Start Redis first, then restart celery |
+
+### Quick Fix Commands:
+
+```bash
+# Kill process on port 8000
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F
+
+# Kill process on port 3000
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+
+# Reset database (if needed)
+python manage.py migrate --fake zero
+python manage.py migrate
+python manage.py seed_data
+```
+
+---
+
+## �📁 Repository Structure
 
 ```
 dlms-riba/                          ← Root of the GitHub repository

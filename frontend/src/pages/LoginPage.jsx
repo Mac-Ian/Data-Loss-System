@@ -25,6 +25,32 @@ const C = {
   border:    "rgba(255,255,255,0.12)",
 };
 
+// ── Riba Logo Mark (shark fin + transport motif)
+const RibaLogoMark = ({ size = 52 }) => (
+  <svg viewBox="0 0 80 80" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+    <rect width="80" height="80" rx="10" fill="#FFFFFF"/>
+    {/* shark fin */}
+    <path d="M40 6 C44 6,58 15,63 32 L50 32 C48 23,44 14,40 6Z" fill="#1A8BA8"/>
+    <path d="M40 6 C36 6,28 16,27 32 L50 32 C48 23,44 14,40 6Z" fill="#1B3A6B"/>
+    {/* road */}
+    <rect x="12" y="50" width="56" height="3" rx="1.5" fill="#1A8BA8"/>
+    <rect x="8"  y="54" width="64" height="2" rx="1"   fill="#1B3A6B" opacity="0.45"/>
+    {/* car */}
+    <rect x="14" y="40" width="20" height="10" rx="2.5" fill="#1B3A6B"/>
+    <rect x="17" y="35" width="13" height="7"  rx="2"   fill="#1A8BA8"/>
+    <circle cx="18" cy="51" r="3.5" fill="#163260"/>
+    <circle cx="30" cy="51" r="3.5" fill="#163260"/>
+    {/* truck */}
+    <rect x="42" y="38" width="24" height="12" rx="2" fill="#1B3A6B"/>
+    <rect x="42" y="34" width="9"  height="7"  rx="2" fill="#1A8BA8"/>
+    <circle cx="47" cy="51" r="3.5" fill="#163260"/>
+    <circle cx="61" cy="51" r="3.5" fill="#163260"/>
+    {/* swoosh */}
+    <path d="M10 57 Q40 63 70 57" stroke="#1A8BA8" strokeWidth="2"
+      fill="none" strokeLinecap="round" opacity="0.55"/>
+  </svg>
+);
+
 // ── Demo credentials helper cards
 const DEMO_ROLES = [
   { role: "ADMIN",      email: "admin@riba.ug",      pass: "Admin@2024!",    color: C.gold,  icon: "⚡" },
@@ -191,19 +217,12 @@ export default function LoginPage() {
       }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 48 }}>
-          <div style={{
-            width: 52, height: 52, borderRadius: 12,
-            background: `linear-gradient(135deg, ${C.gold}, ${C.goldLight})`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 16px rgba(200,150,12,0.35)",
-          }}>
-            <span style={{ color: C.navy, fontWeight: 900, fontSize: 24 }}>R</span>
-          </div>
+          <RibaLogoMark size={52} />
           <div>
             <div style={{ color: "#fff", fontWeight: 800, fontSize: 18, letterSpacing: "0.02em" }}>
               RIBA & CO.
             </div>
-            <div style={{ color: C.gold, fontSize: 11, fontWeight: 500, letterSpacing: "0.08em" }}>
+            <div style={{ color: C.teal, fontSize: 11, fontWeight: 500, letterSpacing: "0.08em" }}>
               TRANSPORT & LOGISTICS
             </div>
           </div>

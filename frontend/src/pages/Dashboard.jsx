@@ -161,6 +161,32 @@ const NavItem = ({ icon, label, active, onClick, badge }) => (
   </div>
 );
 
+// ─── Riba Logo Mark (shark fin + transport motif)
+const RibaLogoMark = ({ size = 42 }) => (
+  <svg viewBox="0 0 80 80" width={size} height={size} xmlns="http://www.w3.org/2000/svg">
+    <rect width="80" height="80" rx="10" fill="#FFFFFF"/>
+    {/* shark fin */}
+    <path d="M40 6 C44 6,58 15,63 32 L50 32 C48 23,44 14,40 6Z" fill="#1A8BA8"/>
+    <path d="M40 6 C36 6,28 16,27 32 L50 32 C48 23,44 14,40 6Z" fill="#1B3A6B"/>
+    {/* road */}
+    <rect x="12" y="50" width="56" height="3" rx="1.5" fill="#1A8BA8"/>
+    <rect x="8"  y="54" width="64" height="2" rx="1"   fill="#1B3A6B" opacity="0.45"/>
+    {/* car */}
+    <rect x="14" y="40" width="20" height="10" rx="2.5" fill="#1B3A6B"/>
+    <rect x="17" y="35" width="13" height="7"  rx="2"   fill="#1A8BA8"/>
+    <circle cx="18" cy="51" r="3.5" fill="#163260"/>
+    <circle cx="30" cy="51" r="3.5" fill="#163260"/>
+    {/* truck */}
+    <rect x="42" y="38" width="24" height="12" rx="2" fill="#1B3A6B"/>
+    <rect x="42" y="34" width="9"  height="7"  rx="2" fill="#1A8BA8"/>
+    <circle cx="47" cy="51" r="3.5" fill="#163260"/>
+    <circle cx="61" cy="51" r="3.5" fill="#163260"/>
+    {/* swoosh */}
+    <path d="M10 57 Q40 63 70 57" stroke="#1A8BA8" strokeWidth="2"
+      fill="none" strokeLinecap="round" opacity="0.55"/>
+  </svg>
+);
+
 // ─── MAIN DASHBOARD
 export default function DLMSDashboard() {
   const navigate = useNavigate();
@@ -248,23 +274,20 @@ export default function DLMSDashboard() {
       }}>
         {/* Logo area */}
         <div style={{
-          padding: "22px 18px 18px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          display: "flex", alignItems: "center", gap: 12,
+          padding: "14px 14px",
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          display: "flex", alignItems: "center", gap: 10,
+          minHeight: 72,
         }}>
-          {/* Logo mark */}
-          <div style={{
-            width: 36, height: 36, borderRadius: 8,
-            background: `linear-gradient(135deg, ${RIBA.gold}, ${RIBA.goldLight})`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <span style={{ color: RIBA.navy, fontWeight: 900, fontSize: 16 }}>R</span>
-          </div>
+          <RibaLogoMark size={42} />
           {sidebarOpen && (
             <div>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>RIBA & CO.</div>
-              <div style={{ color: RIBA.gold, fontWeight: 500, fontSize: 10, letterSpacing: "0.06em" }}>DLMS v1.0</div>
+              <div style={{ color: "#fff", fontWeight: 800, fontSize: 15, lineHeight: 1.15 }}>
+                RIBA &amp; CO.
+              </div>
+              <div style={{ color: "#2AABCC", fontWeight: 500, fontSize: 10, letterSpacing: "0.07em" }}>
+                DLMS v1.0
+              </div>
             </div>
           )}
         </div>
