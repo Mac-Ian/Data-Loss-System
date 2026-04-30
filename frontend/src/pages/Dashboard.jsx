@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -161,9 +163,53 @@ const NavItem = ({ icon, label, active, onClick, badge }) => (
 
 // ─── MAIN DASHBOARD
 export default function DLMSDashboard() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, logout, role } = useAuth();
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Map route paths to nav item IDs
+  const routeToId = {
+    "/": "dashboard",
+    "/assets": "data",
+    "/monitoring": "monitoring",
+    "/alerts": "alerts",
+    "/reports": "reports",
+    "/audit": "audit",
+    "/users": "users",
+    "/settings": "settings",
+  };
+
+  // Sync activePage with current route
+  useEffect(() => {
+    const id = routeToId[location.pathname];
+    if (id) setActivePage(id);
+  }, [location.pathname]);
+
+  // Handle nav clicks - navigate to actual routes
+  const handleNavClick = (itemId) => {
+    setActivePage(itemId);
+    const routeMap = {
+      dashboard: "/",
+      monitoring: "/monitoring",
+      alerts: "/alerts",
+      data: "/assets",
+      classification: "/assets", // Classification is part of assets page
+      users: "/users",
+      audit: "/audit",
+      reports: "/reports",
+      settings: "/settings",
+    };
+    navigate(routeMap[itemId] || "/");
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   useEffect(() => {
     const t = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -171,15 +217,15 @@ export default function DLMSDashboard() {
   }, []);
 
   const navItems = [
-    { id: "dashboard",       icon: "⬛", label: "Dashboard",             badge: null },
-    { id: "monitoring",      icon: "📡", label: "Live Monitoring",        badge: "4" },
-    { id: "alerts",          icon: "🔔", label: "Threat Alerts",          badge: "3" },
-    { id: "data",            icon: "🗂", label: "Data Assets",            badge: null },
-    { id: "classification",  icon: "🏷", label: "Classification Engine",  badge: null },
-    { id: "users",           icon: "👥", label: "Users & RBAC",           badge: null },
-    { id: "audit",           icon: "📋", label: "Audit Logs",             badge: null },
-    { id: "reports",         icon: "📊", label: "Reports",                badge: null },
-    { id: "settings",        icon: "⚙️", label: "Settings",               badge: null },
+    { id: "dashboard",       icon: "⬛", label: "Dashboard",             badge: null, path: "/" },
+    { id: "monitoring",      icon: "📡", label: "Live Monitoring",        badge: "4", path: "/monitoring" },
+    { id: "alerts",          icon: "🔔", label: "Threat Alerts",          badge: "3", path: "/alerts" },
+    { id: "data",            icon: "🗂", label: "Data Assets",            badge: null, path: "/assets" },
+    { id: "classification",  icon: "🏷", label: "Classification Engine",  badge: null, path: "/assets" },
+    { id: "users",           icon: "👥", label: "Users & RBAC",           badge: null, path: "/users" },
+    { id: "audit",           icon: "📋", label: "Audit Logs",             badge: null, path: "/audit" },
+    { id: "reports",         icon: "📊", label: "Reports",                badge: null, path: "/reports" },
+    { id: "settings",        icon: "⚙️", label: "Settings",               badge: null, path: "/settings" },
   ];
 
   return (
@@ -251,7 +297,7 @@ export default function DLMSDashboard() {
               key={item.id}
               {...item}
               active={activePage === item.id}
-              onClick={() => setActivePage(item.id)}
+              onClick={() => handleNavClick(item.id)}
             />
           ))}
         </nav>
@@ -260,21 +306,46 @@ export default function DLMSDashboard() {
         <div style={{
           padding: "14px 18px",
           borderTop: "1px solid rgba(255,255,255,0.08)",
-          display: "flex", alignItems: "center", gap: 10,
+          display: "flex", flexDirection: "column", gap: 10,
         }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%",
-            background: RIBA.teal,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <span style={{ color: "#fff", fontWeight: 700, fontSize: 12 }}>SA</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: "50%",
+              background: RIBA.teal,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <span style={{ color: "#fff", fontWeight: 700, fontSize: 12 }}>
+                {user?.first_name?.[0] || user?.email?.[0]?.toUpperCase() || "SA"}
+              </span>
+            </div>
+            {sidebarOpen && (
+              <div style={{ overflow: "hidden", flex: 1 }}>
+                <div style={{ color: "#fff", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
+                  {user?.first_name || user?.email?.split('@')[0] || "System Admin"}
+                </div>
+                <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 10 }}>{user?.email || "admin@riba.ug"}</div>
+              </div>
+            )}
           </div>
           {sidebarOpen && (
-            <div style={{ overflow: "hidden" }}>
-              <div style={{ color: "#fff", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>System Admin</div>
-              <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 10 }}>admin@riba.ug</div>
-            </div>
+            <button
+              onClick={handleLogout}
+              style={{
+                background: "rgba(192,52,43,0.15)",
+                border: "1px solid rgba(192,52,43,0.3)",
+                borderRadius: 6,
+                padding: "6px 10px",
+                color: "#FF6B6B",
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                transition: "all 0.15s ease",
+              }}
+            >
+              <span>🚪</span> Logout
+            </button>
           )}
         </div>
       </div>
@@ -340,7 +411,7 @@ export default function DLMSDashboard() {
               padding: "4px 12px", borderRadius: 6,
               fontSize: 11, fontWeight: 700, letterSpacing: "0.04em",
             }}>
-              ADMIN
+              {role || "USER"}
             </div>
           </div>
         </header>
