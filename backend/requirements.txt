@@ -1,0 +1,30 @@
+# backend/requirements.txt
+# DLMS – Riba & Company Limited
+# Install with: pip install -r requirements.txt
+
+# ── Django core ────────────────────────────────────────────────
+Django==4.2.13
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+django-filter==24.2
+
+# ── Database ───────────────────────────────────────────────────
+mysqlclient==2.2.4
+
+# ── Task queue ─────────────────────────────────────────────────
+celery==5.3.6
+redis==5.0.4
+django-celery-beat==2.6.0
+
+# ── Environment ────────────────────────────────────────────────
+python-dotenv==1.0.1
+
+# ── File handling ──────────────────────────────────────────────
+Pillow==10.3.0
+
+# ── PDF generation ─────────────────────────────────────────────
+reportlab==4.2.0
+
+# ── Production server ──────────────────────────────────────────
+gunicorn==22.0.0
