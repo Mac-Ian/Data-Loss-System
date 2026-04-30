@@ -1,0 +1,171 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────
+#  DLMS – Riba & Company Limited
+#  Docker Compose — Full Stack
+#
+#  Services:  db · redis · backend · celery · beat · frontend
+#
+#  Quick start:
+#    1. cp backend/.env.example backend/.env  (fill in values)
+#    2. docker compose up --build
+#    3. docker compose exec backend python manage.py seed_data
+#    4. docker compose exec backend python manage.py seed_rules
+#    5. docker compose exec backend python manage.py seed_monitoring
+#    6. docker compose exec backend python manage.py seed_alerts
+#    7. Open http://localhost:3000
+# ──────────────────────────────────────────────────────────────
+
+services:
+
+  # ── MySQL 8 ──────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: dlms_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE:      ${DB_NAME:-dlms_db}
+      MYSQL_USER:          ${DB_USER:-dlms_user}
+      MYSQL_PASSWORD:      ${DB_PASSWORD:-dlmspassword}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+             "-u", "dlms_user", "-pdlmspassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - dlms_net
+
+  # ── Redis 7 ──────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: dlms_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - dlms_net
+
+  # ── Django + Gunicorn ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dlms_backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      DB_HOST:   db
+      REDIS_URL: redis://redis:6379/0
+      DEBUG:     "False"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - media_files:/app/media
+      - static_files:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn dlms_backend.wsgi:application
+               --bind 0.0.0.0:8000
+               --workers 3
+               --timeout 120
+               --access-logfile -"
+    networks:
+      - dlms_net
+
+  # ── Celery Worker ─────────────────────────────────────────────
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dlms_celery
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      DB_HOST:   db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A dlms_backend worker -l info --concurrency=2
+    networks:
+      - dlms_net
+
+  # ── Celery Beat ───────────────────────────────────────────────
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dlms_beat
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      DB_HOST:   db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A dlms_backend beat -l info
+        --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    networks:
+      - dlms_net
+
+  # ── React (Nginx) ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: http://localhost:8000/api
+    container_name: dlms_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - dlms_net
+
+volumes:
+  mysql_data:
+  redis_data:
+  media_files:
+  static_files:
+
+networks:
+  dlms_net:
+    driver: bridge
